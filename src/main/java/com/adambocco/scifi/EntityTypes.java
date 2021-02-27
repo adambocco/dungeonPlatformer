@@ -1,0 +1,5 @@
+package com.adambocco.scifi;
+
+public enum EntityTypes {
+    PLATFORM, GOLDCHEST, GOLDKEY, SILVERCHEST, SILVERKEY, PLAYER, SKELETON, SPIKES, WALL, GATE, DOOR, COIN, ELEVATOR, LEVER
+}
