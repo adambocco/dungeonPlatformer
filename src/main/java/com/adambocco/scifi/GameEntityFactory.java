@@ -10,10 +10,8 @@ import com.almasb.fxgl.entity.Spawns;
 import com.almasb.fxgl.entity.action.ActionComponent;
 import com.almasb.fxgl.entity.component.Component;
 import com.almasb.fxgl.entity.components.CollidableComponent;
-import com.almasb.fxgl.physics.BoundingShape;
-import com.almasb.fxgl.physics.HitBox;
-import com.almasb.fxgl.physics.PhysicsComponent;
-import com.almasb.fxgl.physics.PhysicsWorld;
+import com.almasb.fxgl.entity.components.TransformComponent;
+import com.almasb.fxgl.physics.*;
 import com.almasb.fxgl.physics.box2d.common.JBoxSettings;
 import com.almasb.fxgl.physics.box2d.dynamics.BodyDef;
 import com.almasb.fxgl.physics.box2d.dynamics.BodyType;
@@ -22,6 +20,7 @@ import com.almasb.fxgl.texture.AnimatedTexture;
 import com.almasb.fxgl.texture.AnimationChannel;
 import com.almasb.fxgl.texture.ImagesKt;
 import com.almasb.fxgl.texture.Texture;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -34,6 +33,14 @@ import javafx.util.Duration;
 public class GameEntityFactory implements EntityFactory {
 
     Image tilesheet = new Image("file:C:\\Users\\User\\Documents\\Projects\\SciFiGame\\target\\classes\\assets\\textures\\sheet.png");
+
+    @Spawns("background")
+    public Entity newBackground(SpawnData data) {
+        return FXGL.entityBuilder()
+                .from(data)
+                .view(new Rectangle(FXGL.getAppWidth()*2, FXGL.getAppHeight()*2))
+                .build();
+    }
 
     @Spawns("platform")
     public Entity newPlatform(SpawnData data) {
@@ -65,11 +72,14 @@ public class GameEntityFactory implements EntityFactory {
     public Entity newPlayer(SpawnData data) {
         PhysicsComponent physics = new PhysicsComponent();
         physics.setBodyType(BodyType.DYNAMIC);
+        FixtureDef fd = new FixtureDef();
+        fd.setFriction(0);
+        physics.setFixtureDef(fd);
         physics.addGroundSensor(new HitBox(BoundingShape.box(40, 38)));
+
 
         return FXGL.entityBuilder()
                 .type(EntityTypes.PLAYER)
-                .at(300,400)
                 .bbox(new HitBox(BoundingShape.box(24,38)))
                 .with(physics)
                 .with(new SpriteControl())
@@ -88,25 +98,58 @@ public class GameEntityFactory implements EntityFactory {
         fd.friction(0);
         fd.setDensity(0);
         fd.setRestitution(0);
-//        BodyDef d = new BodyDef();
-//        d.setGravityScale(1000);
-//        physics.setBodyDef(d);
         physics.setFixtureDef(fd);
+
+        HitBox hb = new HitBox("body", new Point2D(21,16),BoundingShape.box(20,32));
 
         return FXGL.entityBuilder()
                 .type(EntityTypes.SKELETON)
-                .at(500,400)
-                .bbox(new HitBox(BoundingShape.box(32,48)))
+                .bbox(hb)
                 .with(new CollidableComponent(true))
                 .with(new ActionComponent())
                 .with(new SkeletonControl())
                 .with(physics)
+                .with("dying", false)
+                .with("dead", false)
+                .build();
+    }
+
+    @Spawns("pigman")
+    public Entity newPigman(SpawnData data) {
+        PhysicsComponent physics = new PhysicsComponent();
+        physics.setBodyType(BodyType.DYNAMIC);
+
+        FixtureDef fd = new FixtureDef();
+        fd.friction(1000);
+        physics.setFixtureDef(fd);
+
+        HitBox hb = new HitBox(BoundingShape.box(80,80));
+
+        return FXGL.entityBuilder()
+                .type(EntityTypes.PIGMAN)
+                .bbox(hb)
+                .with(new CollidableComponent(true))
+                .with(new ActionComponent())
+                .with(new PigControl())
+                .with(physics)
+                .with("dying", false)
                 .build();
     }
 
     @Spawns("goldchest")
     public Entity newGoldChest(SpawnData data) {
         PhysicsComponent physics = new PhysicsComponent();
+        physics.addSensor(new HitBox(BoundingShape.box(20, 20)), new SensorCollisionHandler() {
+            @Override
+            protected void onCollisionBegin(Entity other) {
+                other.setProperty("goldChestAccess", true);
+            }
+
+            @Override
+            protected void onCollisionEnd(Entity other) {
+                other.setProperty("goldChestAccess", false);
+            }
+        });
 
         return FXGL.entityBuilder()
                 .type(EntityTypes.GOLDCHEST)
@@ -218,8 +261,12 @@ public class GameEntityFactory implements EntityFactory {
     public Entity newElevator(SpawnData data) {
         PhysicsComponent physics = new PhysicsComponent();
         physics.setBodyType(BodyType.DYNAMIC);
-
-        Texture tex = new Texture(tilesheet).subTexture(new Rectangle2D(32,0,48,16));
+        FixtureDef fd = new FixtureDef();
+        fd.setFriction(0);
+        physics.setFixtureDef(fd);
+        Image platformts = new Image("file:C:\\Users\\User\\Documents\\Projects\\SciFiGame\\target\\classes\\assets\\textures\\decorative_obj.png");
+        System.out.println(platformts.getHeight());
+        Texture tex = new Texture(platformts).subTexture(new Rectangle2D(416,192,48,16));
 
         return FXGL.entityBuilder()
                 .type(EntityTypes.ELEVATOR)

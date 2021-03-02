@@ -11,6 +11,7 @@ import javafx.util.Duration;
 
 class SpriteControl extends Component {
 
+    public boolean isSlashing;
     private AnimatedTexture texture;
     private final AnimationChannel animIdle;
     private final AnimationChannel animWalk;
@@ -70,29 +71,33 @@ class SpriteControl extends Component {
         }
     }
     public void slash() {
+        isSlashing = true;
         texture.playAnimationChannel(animSlash);
+
         texture.setOnCycleFinished(new Runnable() {
             @Override
             public void run() {
-                texture.loopAnimationChannel(animIdle);
 
+                texture.loopAnimationChannel(animIdle);
+                isSlashing = false;
             }
         });
     }
 
     public void death() {
         texture.playAnimationChannel(animDeath);
-
+        entity.setProperty("busy", true);
         texture.setOnCycleFinished(new Runnable() {
             @Override
             public void run() {
-                SciFiGame.dying = false;
+                entity.setProperty("busy", false);
                 texture.loopAnimationChannel(animIdle);
-                entity.getComponent(PhysicsComponent.class).overwritePosition(new Point2D(200,430));
+                entity.getComponent(PhysicsComponent.class).overwritePosition(new Point2D(300,430));
+                System.out.println("Overwriting position");
                 texture.setOnCycleFinished(new Runnable() {
                     @Override
                     public void run() {
-
+                        entity.setProperty("busy", false);
                     }
                 });
             }
